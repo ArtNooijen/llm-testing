@@ -1,101 +1,53 @@
 #!/usr/bin/env python3
-"""
-Simple connection test script for debugging Ollama connectivity.
-"""
+"""Test script to verify Ollama connection."""
 
 import requests
-import sys
+import json
 from config import Config
 
-def test_connection(url, model_name):
-    """Test connection to an Ollama instance."""
+def test_connection():
+    """Test connection to Ollama instance."""
+    config = Config()
+    url = config.ollama_url
+    
     print(f"Testing connection to: {url}")
-    print(f"Model: {model_name}")
-    print("-" * 50)
+    print(f"Model: {config.ollama_model}")
+    print()
     
     try:
         # Test basic connectivity
-        print("1. Testing basic connectivity...")
-        response = requests.get(f"{url}/api/tags", timeout=5)
-        response.raise_for_status()
-        print("✅ Basic connectivity: OK")
-        
-        # Check available models
-        data = response.json()
-        available_models = [model['name'] for model in data.get('models', [])]
-        print(f"📋 Available models: {available_models}")
-        
-        if model_name in available_models:
-            print(f"✅ Model '{model_name}' is available")
+        response = requests.get(f"{url}/api/tags", timeout=10)
+        if response.status_code == 200:
+            print("✓ Ollama is reachable!")
+            
+            # Check if model is available
+            models = response.json().get('models', [])
+            model_names = [model.get('name', '') for model in models]
+            
+            print(f"Available models: {model_names}")
+            
+            if any(config.ollama_model in name for name in model_names):
+                print(f"✓ Model {config.ollama_model} is available!")
+                return True
+            else:
+                print(f"✗ Model {config.ollama_model} not found")
+                print("Available models:")
+                for model in model_names:
+                    print(f"  - {model}")
+                return False
         else:
-            print(f"❌ Model '{model_name}' not found")
+            print(f"✗ Ollama returned status code: {response.status_code}")
             return False
-        
-        # Test a simple generation
-        print("\n2. Testing model generation...")
-        test_prompt = "Say hello in one word."
-        payload = {
-            "model": model_name,
-            "prompt": test_prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.1,
-                "num_predict": 10
-            }
-        }
-        
-        response = requests.post(f"{url}/api/generate", json=payload, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        
-        print(f"✅ Generation test: {data.get('response', 'No response')}")
-        return True
-        
+            
     except requests.exceptions.ConnectTimeout:
-        print("❌ Connection timeout - server not responding")
+        print("✗ Connection timeout - Ollama might not be running")
         return False
-    except requests.exceptions.ConnectionError as e:
-        print(f"❌ Connection error: {e}")
-        return False
-    except requests.exceptions.HTTPError as e:
-        print(f"❌ HTTP error: {e}")
+    except requests.exceptions.ConnectionError:
+        print("✗ Connection failed - Check if Ollama is running and accessible")
         return False
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"✗ Unexpected error: {e}")
         return False
 
-def main():
-    """Main function."""
-    if len(sys.argv) > 1:
-        # Test specific URL
-        url = sys.argv[1]
-        model_name = sys.argv[2] if len(sys.argv) > 2 else "mistral:7b"
-        test_connection(url, model_name)
-    else:
-        # Test all configured models
-        config = Config()
-        models = config.get_available_models()
-        
-        print("🔍 Testing all configured models...\n")
-        
-        for model_name in models:
-            try:
-                model_config = config.get_model_config(model_name)
-                url = model_config['url']
-                actual_model = model_config['model_name']
-                
-                print(f"\n🤖 Testing: {model_name}")
-                success = test_connection(url, actual_model)
-                
-                if success:
-                    print(f"✅ {model_name}: Working perfectly!")
-                else:
-                    print(f"❌ {model_name}: Failed")
-                    
-            except Exception as e:
-                print(f"❌ {model_name}: Configuration error - {e}")
-            
-            print("\n" + "="*60)
-
 if __name__ == "__main__":
-    main()
+    test_connection()

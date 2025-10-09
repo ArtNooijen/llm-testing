@@ -1,136 +1,166 @@
-# LLM Testing Framework
+# LLM Testing Interface
 
-A flexible testing framework for comparing different Large Language Model (LLM) providers including Ollama, LMStudio, and more.
+A Python interface for testing different LLM inference backends with a focus on Ollama. This project provides a swappable interface architecture that allows you to easily switch between different inference backends.
 
 ## Features
 
-- **Multi-Provider Support**: Test models from different providers (Ollama, LMStudio, etc.)
-- **Streaming Responses**: Real-time streaming output for better user experience
-- **Interactive Mode**: Chat-like interface for testing prompts
-- **Batch Testing**: Run multiple prompts against different models
-- **Configuration Management**: YAML-based configuration for easy model management
-- **Network Support**: Works with remote models via Tailscale or other networks
+- 🚀 **Interactive CLI**: Beautiful command-line interface with rich formatting
+- 🔄 **Swappable Backends**: Easy to add new inference backends
+- 🌐 **Remote Connection**: Connect to Ollama running on remote machines via Tailscale
+- ⚙️ **Configurable**: YAML-based configuration
+- 📦 **UV Managed**: Modern Python dependency management
+
+## Prerequisites
+
+- Python 3.10+
+- [UV](https://docs.astral.sh/uv/) package manager
+- Ollama running on a remote machine (accessible via Tailscale)
+- Tailscale network access to the remote machine
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd llm-testing
-```
+1. **Install UV** (if not already installed):
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
-2. Install dependencies:
-```bash
-pip install -e .
-```
-
-Or using uv (recommended):
-```bash
-uv sync
-```
+2. **Clone and setup the project**:
+   ```bash
+   cd llm-testing
+   uv sync
+   ```
 
 ## Configuration
 
-The framework uses `config.yaml` to define available models. Here's an example:
+The project uses `config.yaml` for configuration. The default configuration connects to:
+
+- **Host**: 100.70.84.114 (drutus via Tailscale)
+- **Port**: 11434 (default Ollama port)
+- **Model**: mistral:7b
+
+### Customizing Configuration
+
+Edit `config.yaml` to change settings:
 
 ```yaml
-models:
-  mistral-local:
-    provider: ollama
-    url: "http://localhost:11434"
-    model_name: "mistral:7b"
-    default_params:
-      temperature: 0.7
-      max_tokens: 200
-  
-  mistral-remote:
-    provider: ollama
-    url: "http://100.70.84.114:11434"  # Your Tailscale IP
-    model_name: "mistral:7b"
-    default_params:
-      temperature: 0.7
-      max_tokens: 200
+# Ollama Configuration
+ollama:
+  host: "100.70.84.114"  # Your remote machine IP
+  port: 11434
+  model: "mistral:7b"     # Model to use
+  timeout: 30            # Request timeout in seconds
 
-default_model: "mistral-remote"
+# CLI Configuration
+cli:
+  welcome_message: "Welcome to LLM Testing Interface!"
+  prompt: "You: "
+  exit_commands: ["/exit", "/quit", "/q"]
+  clear_commands: ["/clear", "/cls"]
 ```
 
 ## Usage
 
-### Interactive Mode
-
-Start an interactive chat session:
+### Running the Interface
 
 ```bash
-python main.py interactive
+uv run python src/main.py
 ```
 
-Or specify a model:
+### Commands
 
-```bash
-python main.py interactive --model mistral-local
-```
+- **Type your message**: Just type and press Enter to send a message
+- **`/exit`**, **`/quit`**, **`/q`**: Exit the application
+- **`/clear`**, **`/cls`**: Clear the screen
+- **Ctrl+C**: Force exit
 
-### Batch Testing
-
-Test multiple prompts against all configured models:
-
-```bash
-python main.py batch prompts.txt
-```
-
-Create a `prompts.txt` file with one prompt per line:
+### Example Session
 
 ```
-What is the meaning of life?
-Explain quantum computing in simple terms.
-Write a haiku about programming.
+┌─ LLM Testing Interface ─────────────────────────────────────────┐
+│ Welcome to LLM Testing Interface!                              │
+│                                                                │
+│ Status: ✓ Connected to mistral:7b                            │
+│                                                                │
+│ Host: 100.70.84.114:11434                                     │
+│ Model: mistral:7b                                             │
+│                                                                │
+│ Commands: /exit to quit, /clear to clear screen              │
+└────────────────────────────────────────────────────────────────┘
+
+You: Hello, how are you today?
+
+Thinking...
+
+Assistant:
+┌────────────────────────────────────────────────────────────────┐
+│ Hello! I'm doing well, thank you for asking. I'm here and     │
+│ ready to help you with any questions or tasks you might have. │
+│ How can I assist you today?                                   │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### List Available Models
+## Architecture
 
-Check which models are configured and their availability:
+### Interface System
 
-```bash
-python main.py list
+The project uses an abstract base class pattern for easy backend swapping:
+
+```
+src/
+├── interfaces/
+│   ├── base.py          # Abstract base interface
+│   └── ollama.py        # Ollama implementation
+├── config.py            # Configuration management
+└── main.py             # Interactive CLI
 ```
 
-## Supported Providers
+### Adding New Backends
 
-### Ollama
+To add a new inference backend:
 
-Ollama is fully supported with streaming responses. Configure with:
+1. **Create a new interface class** in `src/interfaces/`:
 
-```yaml
-my-ollama-model:
-  provider: ollama
-  url: "http://localhost:11434"  # or your remote IP
-  model_name: "mistral:7b"
+```python
+from .base import BaseInferenceInterface
+
+class MyBackendInterface(BaseInferenceInterface):
+    def generate(self, prompt: str) -> str:
+        # Implementation here
+        pass
+    
+    def is_available(self) -> bool:
+        # Check availability
+        pass
+    
+    def get_model_info(self) -> Optional[dict]:
+        # Return model info
+        pass
 ```
 
-### LMStudio
+2. **Update the main application** to use your new backend
+3. **Add configuration** for your backend in `config.yaml`
 
-LMStudio support is planned. The framework includes a placeholder implementation that can be extended to support LMStudio's OpenAI-compatible API.
+## Troubleshooting
 
-## Network Setup
+### Connection Issues
 
-### Using Tailscale
+1. **Check Tailscale connection**:
+   ```bash
+   ping 100.70.84.114
+   ```
 
-If you have Ollama running on a remote machine connected via Tailscale:
+2. **Verify Ollama is running** on the remote machine:
+   ```bash
+   curl http://100.70.84.114:11434/api/tags
+   ```
 
-1. Find your Tailscale IP on the remote machine:
-```bash
-tailscale ip
-```
+3. **Check firewall settings** on the remote machine
 
-2. Update your `config.yaml` with the Tailscale IP:
-```yaml
-mistral-remote:
-  provider: ollama
-  url: "http://YOUR_TAILSCALE_IP:11434"
-  model_name: "mistral:7b"
-```
+### Common Issues
 
-3. Ensure Ollama is configured to accept connections from your Tailscale network.
+- **"Cannot connect to Ollama"**: Verify the remote machine is accessible and Ollama is running
+- **"Model not found"**: Ensure the model is pulled on the remote Ollama instance
+- **Timeout errors**: Increase the timeout value in `config.yaml`
 
 ## Development
 
@@ -138,81 +168,26 @@ mistral-remote:
 
 ```
 llm-testing/
-├── main.py              # Main application entry point
-├── config.py            # Configuration management
-├── config.yaml          # Model configurations
-├── ollama_interface.py  # Abstract base class
-├── ollama_model.py      # Ollama implementation
-├── lmstudio_model.py    # LMStudio placeholder
-├── pyproject.toml       # Project dependencies
-└── README.md           # This file
+├── pyproject.toml          # UV project configuration
+├── config.yaml            # Runtime configuration
+├── .gitignore             # Git ignore rules
+├── src/
+│   ├── __init__.py
+│   ├── main.py            # Interactive CLI entry point
+│   ├── config.py          # Configuration management
+│   └── interfaces/
+│       ├── __init__.py
+│       ├── base.py        # Abstract base interface
+│       └── ollama.py      # Ollama implementation
+└── README.md              # This file
 ```
 
-### Adding New Providers
+### Dependencies
 
-1. Create a new model class inheriting from `LLMInterface`
-2. Implement the required methods: `generate()`, `get_model_info()`, `is_available()`
-3. Add the provider to the `ModelFactory.create_model()` method
-4. Update the configuration schema documentation
-
-### Example Provider Implementation
-
-```python
-from ollama_interface import LLMInterface
-from typing import Iterator, Union
-
-class MyProviderModel(LLMInterface):
-    def __init__(self, url: str, model_name: str):
-        self.url = url
-        self.model_name = model_name
-    
-    def generate(self, prompt: str, stream: bool = True) -> Union[Iterator[str], str]:
-        # Implement your provider's API calls here
-        pass
-    
-    def get_model_info(self) -> dict:
-        return {
-            "provider": "myprovider",
-            "model_name": self.model_name,
-            "url": self.url
-        }
-    
-    def is_available(self) -> bool:
-        # Check if the model is available
-        return True
-```
-
-## Troubleshooting
-
-### Connection Issues
-
-- **Ollama not responding**: Check if Ollama is running and accessible
-- **Network timeout**: Verify the URL and network connectivity
-- **Model not found**: Ensure the model is installed in Ollama (`ollama list`)
-
-### Configuration Issues
-
-- **Invalid YAML**: Check your `config.yaml` syntax
-- **Missing models**: Verify all required fields are present in model configurations
-- **Provider not supported**: Check that the provider is implemented in `ModelFactory`
+- `ollama`: Ollama Python client
+- `pyyaml`: YAML configuration parsing
+- `rich`: Beautiful terminal output
 
 ## License
 
-MIT License - see LICENSE file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## Roadmap
-
-- [ ] Complete LMStudio implementation
-- [ ] Add OpenAI API support
-- [ ] Implement response comparison tools
-- [ ] Add performance benchmarking
-- [ ] Web interface for easier testing
-- [ ] Docker support for easy deployment
+This project is open source and available under the MIT License.
