@@ -1,0 +1,38 @@
+# LLM Testing Configuration
+# This file defines the available models and their configurations
+
+models:
+  # Ollama models
+  mistral-local:
+    provider: ollama
+    url: "http://localhost:11434"
+    model_name: "mistral:7b"
+    default_params:
+      temperature: 0.7
+      max_tokens: 200
+  
+  mistral-remote:
+    provider: ollama
+    url: "100.70.84.114:11434"  # Your Tailscale IP
+    model_name: "mistral:7b"
+    default_params:
+      temperature: 0.7
+      max_tokens: 200
+  
+  # LMStudio models (placeholder)
+  lmstudio-local:
+    provider: lmstudio
+    url: "http://localhost:1234"
+    model_name: "local-model"
+    default_params:
+      temperature: 0.7
+      max_tokens: 200
+
+# Default model to use
+default_model: "mistral-remote"
+
+# Application settings
+app:
+  timeout: 30
+  retry_attempts: 3
+  batch_output_dir: "outputs"
