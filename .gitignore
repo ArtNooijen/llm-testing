@@ -55,3 +55,6 @@ Thumbs.db
 
 # UV
 .uv/
+
+# Configuration files with sensitive data
+config.yaml

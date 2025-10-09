@@ -1,0 +1,27 @@
+# Configuration for LLM Testing Interface
+
+# Ollama Instances
+ollama_instances:
+  remote:
+    host: "your-remote-server.com"  # Your remote machine
+    port: 11434
+    timeout: 30
+  local:
+    host: "localhost"  # Local machine
+    port: 11434
+    timeout: 30
+
+# Models to test (specify which instance each model runs on)
+models:
+  - name: "mistral:7b"
+    instance: "remote"
+  - name: "llama3.1:8b"
+    instance: "local"
+  - name: "codellama:7b"
+    instance: "remote"
+
+# CLI Configuration
+cli:
+  welcome_message: "Welcome to LLM Testing Interface!"
+  prompt: "Enter your prompt: "
+  comparison_mode: true  # Run all models and compare responses

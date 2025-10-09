@@ -43,11 +43,11 @@ The project uses `config.yaml` for configuration. You can configure multiple Oll
 # Ollama Instances
 ollama_instances:
   remote:
-    host: "drutus"  # drutus via Tailscale
+    host: "your-remote-server.com"  # Your remote machine
     port: 11434
     timeout: 30
   local:
-    host: "localhost"  # local mac run ollama
+    host: "localhost"  # Local machine
     port: 11434
     timeout: 30
 
@@ -86,7 +86,7 @@ models:
 ```yaml
 ollama_instances:
   remote:
-    host: "drutus"
+    host: "your-remote-server.com"
     port: 11434
     timeout: 30
   local:
@@ -117,7 +117,7 @@ The application runs in comparison mode by default. You enter a single prompt an
 │                                                                │
 │ Status: ✓ Connected                                            │
 │                                                                │
-│ Host: drutus:11434, localhost:11434                           │
+│ Host: your-remote-server.com:11434, localhost:11434           │
 │ Models: mistral:7b, llama3.1:8b, codellama:7b                 │
 └────────────────────────────────────────────────────────────────┘
 
@@ -215,14 +215,14 @@ class MyBackendInterface(BaseInferenceInterface):
 
 ### Connection Issues
 
-1. **Check Tailscale connection**:
+1. **Check network connection**:
    ```bash
-   ping 100.70.84.114
+   ping your-remote-server.com
    ```
 
 2. **Verify Ollama is running** on the remote machine:
    ```bash
-   curl http://100.70.84.114:11434/api/tags
+   curl http://your-remote-server.com:11434/api/tags
    ```
 
 3. **Check firewall settings** on the remote machine
