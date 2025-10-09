@@ -1,15 +1,27 @@
 # Configuration for LLM Testing Interface
 
-# Ollama Configuration
-ollama:
-  host: "drutus"  # drutus via Tailscale
-  port: 11434
-  model: "mistral:7b"
-  timeout: 30  # seconds
+# Ollama Instances
+ollama_instances:
+  remote:
+    host: "drutus"  # drutus via Tailscale
+    port: 11434
+    timeout: 30
+  local:
+    host: "localhost"  # local mac run ollama
+    port: 11434
+    timeout: 30
+
+# Models to test (specify which instance each model runs on)
+models:
+  - name: "mistral:7b"
+    instance: "remote"
+  - name: "llama3.1:8b"
+    instance: "local"
+  - name: "codellama:7b"
+    instance: "remote"
 
 # CLI Configuration
 cli:
   welcome_message: "Welcome to LLM Testing Interface!"
-  prompt: "You: "
-  exit_commands: ["/exit", "/quit", "/q"]
-  clear_commands: ["/clear", "/cls"]
+  prompt: "Enter your prompt: "
+  comparison_mode: true  # Run all models and compare responses

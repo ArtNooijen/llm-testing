@@ -9,15 +9,21 @@ from config import Config
 class OllamaInterface(BaseInferenceInterface):
     """Ollama inference interface implementation."""
     
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, instance_name: str = "remote"):
         """
         Initialize Ollama interface.
         
         Args:
             config: Configuration object
+            instance_name: Name of the Ollama instance to use
         """
         self.config = config
-        self.client = ollama.Client(host=config.ollama_url)
+        self.instance_name = instance_name
+        instance_config = config.get_ollama_instance_config(instance_name)
+        self.host = instance_config['host']
+        self.port = instance_config['port']
+        self.timeout = instance_config['timeout']
+        self.client = ollama.Client(host=config.get_ollama_instance_url(instance_name))
         self.model = config.ollama_model
     
     def generate(self, prompt: str) -> str:

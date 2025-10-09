@@ -1,21 +1,24 @@
 # LLM Testing Interface
 
-A Python interface for testing different LLM inference backends with a focus on Ollama. This project provides a swappable interface architecture that allows you to easily switch between different inference backends.
+A Python interface for testing and comparing different LLM models across multiple Ollama instances. This project provides a swappable interface architecture that allows you to easily test models from different sources and compare their responses.
 
 ## Features
 
-- 🚀 **Interactive CLI**: Beautiful command-line interface with rich formatting
-- 🔄 **Swappable Backends**: Easy to add new inference backends
+- 🚀 **Model Comparison Mode**: Test multiple models with the same prompt and compare responses
+- 🔄 **Multi-Instance Support**: Connect to multiple Ollama instances (remote and local)
 - 🌐 **Remote Connection**: Connect to Ollama running on remote machines via Tailscale
-- ⚙️ **Configurable**: YAML-based configuration
+- ⚙️ **Configurable**: YAML-based configuration for models and instances
 - 📦 **UV Managed**: Modern Python dependency management
+- 🎯 **Single Prompt Testing**: Enter once, test all configured models
 
 ## Prerequisites
 
 - Python 3.10+
 - [UV](https://docs.astral.sh/uv/) package manager
-- Ollama running on a remote machine (accessible via Tailscale)
-- Tailscale network access to the remote machine
+- Ollama running on one or more machines:
+  - Remote machine (accessible via Tailscale) - optional
+  - Local machine (localhost) - optional
+- Tailscale network access (if using remote Ollama)
 
 ## Installation
 
@@ -32,30 +35,68 @@ A Python interface for testing different LLM inference backends with a focus on 
 
 ## Configuration
 
-The project uses `config.yaml` for configuration. The default configuration connects to:
+The project uses `config.yaml` for configuration. You can configure multiple Ollama instances and specify which models run on which instance.
 
-- **Host**: 100.70.84.114 (drutus via Tailscale)
-- **Port**: 11434 (default Ollama port)
-- **Model**: mistral:7b
-
-### Customizing Configuration
-
-Edit `config.yaml` to change settings:
+### Default Configuration
 
 ```yaml
-# Ollama Configuration
-ollama:
-  host: "100.70.84.114"  # Your remote machine IP
-  port: 11434
-  model: "mistral:7b"     # Model to use
-  timeout: 30            # Request timeout in seconds
+# Ollama Instances
+ollama_instances:
+  remote:
+    host: "drutus"  # drutus via Tailscale
+    port: 11434
+    timeout: 30
+  local:
+    host: "localhost"  # local mac run ollama
+    port: 11434
+    timeout: 30
+
+# Models to test (specify which instance each model runs on)
+models:
+  - name: "mistral:7b"
+    instance: "remote"
+  - name: "llama3.1:8b"
+    instance: "local"
+  - name: "codellama:7b"
+    instance: "remote"
 
 # CLI Configuration
 cli:
   welcome_message: "Welcome to LLM Testing Interface!"
-  prompt: "You: "
-  exit_commands: ["/exit", "/quit", "/q"]
-  clear_commands: ["/clear", "/cls"]
+  prompt: "Enter your prompt: "
+  comparison_mode: true  # Run all models and compare responses
+```
+
+### Customizing Configuration
+
+**Add more models:**
+```yaml
+models:
+  - name: "mistral:7b"
+    instance: "remote"
+  - name: "llama3.1:8b"
+    instance: "local"
+  - name: "phi:2.7b"
+    instance: "local"
+  - name: "codellama:7b"
+    instance: "remote"
+```
+
+**Add more Ollama instances:**
+```yaml
+ollama_instances:
+  remote:
+    host: "drutus"
+    port: 11434
+    timeout: 30
+  local:
+    host: "localhost"
+    port: 11434
+    timeout: 30
+  cloud:
+    host: "your-cloud-instance.com"
+    port: 11434
+    timeout: 60
 ```
 
 ## Usage
@@ -66,38 +107,68 @@ cli:
 uv run python src/main.py
 ```
 
-### Commands
+### Comparison Mode (Default)
 
-- **Type your message**: Just type and press Enter to send a message
-- **`/exit`**, **`/quit`**, **`/q`**: Exit the application
-- **`/clear`**, **`/cls`**: Clear the screen
-- **Ctrl+C**: Force exit
-
-### Example Session
+The application runs in comparison mode by default. You enter a single prompt and it tests all configured models:
 
 ```
 ┌─ LLM Testing Interface ─────────────────────────────────────────┐
 │ Welcome to LLM Testing Interface!                              │
 │                                                                │
-│ Status: ✓ Connected to mistral:7b                            │
+│ Status: ✓ Connected                                            │
 │                                                                │
-│ Host: 100.70.84.114:11434                                     │
-│ Model: mistral:7b                                             │
-│                                                                │
-│ Commands: /exit to quit, /clear to clear screen              │
+│ Host: drutus:11434, localhost:11434                           │
+│ Models: mistral:7b, llama3.1:8b, codellama:7b                 │
 └────────────────────────────────────────────────────────────────┘
 
-You: Hello, how are you today?
+Enter your prompt: Explain quantum computing in simple terms
 
+Testing 3 models with the same prompt...
+Prompt: Explain quantum computing in simple terms
+
+Testing Model 1/3: mistral:7b (on remote)
 Thinking...
 
-Assistant:
-┌────────────────────────────────────────────────────────────────┐
-│ Hello! I'm doing well, thank you for asking. I'm here and     │
-│ ready to help you with any questions or tasks you might have. │
-│ How can I assist you today?                                   │
+Testing Model 2/3: llama3.1:8b (on local)
+Thinking...
+
+Testing Model 3/3: codellama:7b (on remote)
+Thinking...
+
+=== COMPARISON RESULTS ===
+
+┌─ Model 1: mistral:7b (remote) ──────────────────────────────────┐
+│ Quantum computing is like having a computer that can be in     │
+│ multiple states at once, unlike regular computers that are     │
+│ either on or off...                                            │
+└────────────────────────────────────────────────────────────────┘
+
+┌─ Model 2: llama3.1:8b (local) ───────────────────────────────┐
+│ Think of quantum computing like having a coin that can be       │
+│ both heads and tails at the same time until you look at it...   │
+└────────────────────────────────────────────────────────────────┘
+
+┌─ Model 3: codellama:7b (remote) ──────────────────────────────┐
+│ Quantum computing uses quantum bits (qubits) that can exist     │
+│ in superposition, allowing for parallel processing...         │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+### Interactive Mode
+
+To switch to interactive mode (chat with one model), set in `config.yaml`:
+
+```yaml
+cli:
+  comparison_mode: false
+```
+
+### Commands (Interactive Mode)
+
+- **Type your message**: Just type and press Enter to send a message
+- **`/exit`**, **`/quit`**, **`/q`**: Exit the application
+- **`/clear`**, **`/cls`**: Clear the screen
+- **Ctrl+C**: Force exit
 
 ## Architecture
 
@@ -173,12 +244,15 @@ llm-testing/
 ├── .gitignore             # Git ignore rules
 ├── src/
 │   ├── __init__.py
-│   ├── main.py            # Interactive CLI entry point
+│   ├── main.py            # Main application (comparison & interactive modes)
 │   ├── config.py          # Configuration management
 │   └── interfaces/
 │       ├── __init__.py
 │       ├── base.py        # Abstract base interface
 │       └── ollama.py      # Ollama implementation
+├── tests/
+│   ├── __init__.py
+│   └── test_connection.py # Connection testing utilities
 └── README.md              # This file
 ```
 
@@ -187,6 +261,15 @@ llm-testing/
 - `ollama`: Ollama Python client
 - `pyyaml`: YAML configuration parsing
 - `rich`: Beautiful terminal output
+- `requests`: HTTP client for connection testing
+
+### Key Features
+
+- **Multi-Instance Support**: Test models across different Ollama instances
+- **Model Comparison**: Side-by-side comparison of model responses
+- **Flexible Configuration**: Easy to add new models and instances
+- **Error Handling**: Graceful handling of connection and model errors
+- **Rich Output**: Beautiful terminal formatting with progress indicators
 
 ## License
 

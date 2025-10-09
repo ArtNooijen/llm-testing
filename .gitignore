@@ -21,6 +21,13 @@ wheels/
 *.egg
 MANIFEST
 
+# Cache and temporary files
+*.pyc
+*.pyo
+*.pyd
+.cache/
+.pytest_cache/
+
 # Virtual environments
 .env
 .venv

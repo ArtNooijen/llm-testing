@@ -72,9 +72,18 @@ class Config:
         return self.get('ollama.port', 11434)
     
     @property
+    def ollama_models(self) -> list:
+        """Get list of models to test with their instances."""
+        models = self.get('models', [])
+        if not models:
+            return [{'name': 'mistral:7b', 'instance': 'remote'}]
+        return models
+    
+    @property
     def ollama_model(self) -> str:
-        """Get Ollama model."""
-        return self.get('ollama.model', 'mistral:7b')
+        """Get first Ollama model (for backward compatibility)."""
+        models = self.ollama_models
+        return models[0]['name'] if models else 'mistral:7b'
     
     @property
     def ollama_timeout(self) -> int:
@@ -85,3 +94,17 @@ class Config:
     def ollama_url(self) -> str:
         """Get full Ollama URL."""
         return f"http://{self.ollama_host}:{self.ollama_port}"
+    
+    def get_ollama_instance_config(self, instance_name: str) -> Dict[str, Any]:
+        """Get configuration for a specific Ollama instance."""
+        instances = self.get('ollama_instances', {})
+        return instances.get(instance_name, {
+            'host': 'localhost',
+            'port': 11434,
+            'timeout': 30
+        })
+    
+    def get_ollama_instance_url(self, instance_name: str) -> str:
+        """Get URL for a specific Ollama instance."""
+        config = self.get_ollama_instance_config(instance_name)
+        return f"http://{config['host']}:{config['port']}"
