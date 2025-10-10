@@ -3,51 +3,56 @@
 
 import requests
 import json
-from config import Config
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.config import Config
 
 def test_connection():
-    """Test connection to Ollama instance."""
+    """Test connection to Ollama instances."""
     config = Config()
-    url = config.ollama_url
+    models = config.ollama_models
     
-    print(f"Testing connection to: {url}")
-    print(f"Model: {config.ollama_model}")
+    print(f"Testing {len(models)} model(s) across different instances...")
     print()
     
-    try:
-        # Test basic connectivity
-        response = requests.get(f"{url}/api/tags", timeout=10)
-        if response.status_code == 200:
-            print("✓ Ollama is reachable!")
-            
-            # Check if model is available
-            models = response.json().get('models', [])
-            model_names = [model.get('name', '') for model in models]
-            
-            print(f"Available models: {model_names}")
-            
-            if any(config.ollama_model in name for name in model_names):
-                print(f"✓ Model {config.ollama_model} is available!")
-                return True
+    for model_config in models:
+        model_name = model_config['name']
+        instance_name = model_config['instance']
+        url = config.get_ollama_instance_url(instance_name)
+        
+        print(f"Testing {model_name} on {instance_name} ({url})")
+        
+        try:
+            # Test basic connectivity
+            response = requests.get(f"{url}/api/tags", timeout=10)
+            if response.status_code == 200:
+                print("✓ Ollama is reachable!")
+                
+                # Check if model is available
+                models_list = response.json().get('models', [])
+                model_names = [model.get('name', '') for model in models_list]
+                
+                print(f"Available models: {model_names}")
+                
+                if any(model_name in name for name in model_names):
+                    print(f"✓ Model {model_name} is available!")
+                else:
+                    print(f"✗ Model {model_name} not found")
+                    print("Available models:")
+                    for model in model_names:
+                        print(f"  - {model}")
             else:
-                print(f"✗ Model {config.ollama_model} not found")
-                print("Available models:")
-                for model in model_names:
-                    print(f"  - {model}")
-                return False
-        else:
-            print(f"✗ Ollama returned status code: {response.status_code}")
-            return False
-            
-    except requests.exceptions.ConnectTimeout:
-        print("✗ Connection timeout - Ollama might not be running")
-        return False
-    except requests.exceptions.ConnectionError:
-        print("✗ Connection failed - Check if Ollama is running and accessible")
-        return False
-    except Exception as e:
-        print(f"✗ Unexpected error: {e}")
-        return False
+                print(f"✗ Ollama returned status code: {response.status_code}")
+                
+        except requests.exceptions.ConnectTimeout:
+            print("✗ Connection timeout - Ollama might not be running")
+        except requests.exceptions.ConnectionError:
+            print("✗ Connection failed - Check if Ollama is running and accessible")
+        except Exception as e:
+            print(f"✗ Unexpected error: {e}")
+        
+        print()
 
 if __name__ == "__main__":
     test_connection()
