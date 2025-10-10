@@ -109,10 +109,20 @@ class LLMChat:
                 instance_name = result['instance']
                 response = result['response']
                 success = result['success']
+                metrics = result.get('metrics')
                 
                 f.write(f"## Model {i}: {model_name} ({instance_name})\n\n")
                 if success:
                     f.write(f"**Status:** ✅ Success\n\n")
+                    if metrics:
+                        f.write(f"**Performance Metrics:**\n")
+                        f.write(f"- **Total Duration:** {metrics['total_duration_s']:.2f} seconds\n")
+                        f.write(f"- **Tokens per Second:** {metrics['tokens_per_second']:.1f}\n")
+                        f.write(f"- **Input Tokens:** {metrics['prompt_eval_count']}\n")
+                        f.write(f"- **Output Tokens:** {metrics['eval_count']}\n")
+                        f.write(f"- **Load Duration:** {metrics['load_duration_s']:.2f} seconds\n")
+                        f.write(f"- **Prompt Eval Duration:** {metrics['prompt_eval_duration_s']:.2f} seconds\n")
+                        f.write(f"- **Response Eval Duration:** {metrics['eval_duration_s']:.2f} seconds\n\n")
                     f.write(f"**Response:**\n\n{response}\n\n")
                 else:
                     f.write(f"**Status:** ❌ Error\n\n")
@@ -125,6 +135,7 @@ class LLMChat:
             instance_name = result['instance']
             response = result['response']
             success = result['success']
+            metrics = result.get('metrics')
             
             individual_file = os.path.join(outputs_dir, f"model_{i}_{model_name}_{timestamp}.md")
             
@@ -134,6 +145,17 @@ class LLMChat:
                 f.write(f"**Instance:** {instance_name}\n")
                 f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write(f"**Status:** {'✅ Success' if success else '❌ Error'}\n\n")
+                
+                if success and metrics:
+                    f.write(f"**Performance Metrics:**\n")
+                    f.write(f"- **Total Duration:** {metrics['total_duration_s']:.2f} seconds\n")
+                    f.write(f"- **Tokens per Second:** {metrics['tokens_per_second']:.1f}\n")
+                    f.write(f"- **Input Tokens:** {metrics['prompt_eval_count']}\n")
+                    f.write(f"- **Output Tokens:** {metrics['eval_count']}\n")
+                    f.write(f"- **Load Duration:** {metrics['load_duration_s']:.2f} seconds\n")
+                    f.write(f"- **Prompt Eval Duration:** {metrics['prompt_eval_duration_s']:.2f} seconds\n")
+                    f.write(f"- **Response Eval Duration:** {metrics['eval_duration_s']:.2f} seconds\n\n")
+                
                 f.write(f"**Prompt:**\n```\n{user_prompt}\n```\n\n")
                 f.write("---\n\n")
                 f.write("**Response:**\n\n")
@@ -204,11 +226,12 @@ class LLMChat:
             # Show typing indicator
             with self.show_typing_indicator():
                 try:
-                    response = model_interface.generate(user_prompt)
+                    result = model_interface.generate(user_prompt)
                     results.append({
                         'model': model_name,
                         'instance': instance_name,
-                        'response': response,
+                        'response': result['response'],
+                        'metrics': result['metrics'],
                         'success': True
                     })
                 except Exception as e:
@@ -216,6 +239,7 @@ class LLMChat:
                         'model': model_name,
                         'instance': instance_name,
                         'response': f"Error: {e}",
+                        'metrics': None,
                         'success': False
                     })
             
@@ -242,13 +266,28 @@ class LLMChat:
             instance_name = result['instance']
             response = result['response']
             success = result['success']
+            metrics = result.get('metrics')
             
             # Create panel for each model result
-            if success:
+            if success and metrics:
+                # Format performance metrics
+                duration = f"{metrics['total_duration_s']:.2f}s"
+                tokens_per_sec = f"{metrics['tokens_per_second']:.1f}"
+                eval_count = metrics['eval_count']
+                prompt_tokens = metrics['prompt_eval_count']
+                
+                metrics_text = f"Duration: {duration} | Tokens/sec: {tokens_per_sec} | Output tokens: {eval_count} | Input tokens: {prompt_tokens}"
+                
+                panel = Panel(
+                    f"{metrics_text}\n\n{response}",
+                    title=f"[bold blue]Model {i}: {model_name} ({instance_name})[/bold blue]",
+                    border_style="green"
+                )
+            elif success:
                 panel = Panel(
                     response,
                     title=f"[bold blue]Model {i}: {model_name} ({instance_name})[/bold blue]",
-                    border_style="green" if success else "red"
+                    border_style="green"
                 )
             else:
                 panel = Panel(
@@ -303,7 +342,9 @@ class LLMChat:
                 # Show typing indicator
                 with self.show_typing_indicator():
                     try:
-                        response = self.interface.generate(user_input)
+                        result = self.interface.generate(user_input)
+                        response = result['response']
+                        metrics = result.get('metrics')
                     except Exception as e:
                         self.console.print(f"[red]Error: {e}[/red]")
                         continue
@@ -311,6 +352,17 @@ class LLMChat:
                 # Display response
                 self.console.print()
                 self.console.print("[bold blue]Assistant:[/bold blue]")
+                
+                # Show performance metrics if available
+                if metrics:
+                    duration = f"{metrics['total_duration_s']:.2f}s"
+                    tokens_per_sec = f"{metrics['tokens_per_second']:.1f}"
+                    eval_count = metrics['eval_count']
+                    prompt_tokens = metrics['prompt_eval_count']
+                    
+                    metrics_text = f"[dim]Duration: {duration} | Tokens/sec: {tokens_per_sec} | Output: {eval_count} tokens | Input: {prompt_tokens} tokens[/dim]"
+                    self.console.print(metrics_text)
+                    self.console.print()
                 
                 formatted_response = self.format_response(response)
                 if isinstance(formatted_response, markdown.Markdown):

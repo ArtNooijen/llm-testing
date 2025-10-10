@@ -26,7 +26,7 @@ class OllamaInterface(BaseInferenceInterface):
         self.client = ollama.Client(host=config.get_ollama_instance_url(instance_name))
         self.model = config.ollama_model
     
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str) -> Dict[str, Any]:
         """
         Generate a response using Ollama.
         
@@ -34,7 +34,7 @@ class OllamaInterface(BaseInferenceInterface):
             prompt: The input prompt
             
         Returns:
-            Generated response text
+            Dictionary containing response text and performance metrics
             
         Raises:
             ConnectionError: If unable to connect to Ollama
@@ -46,7 +46,42 @@ class OllamaInterface(BaseInferenceInterface):
                 prompt=prompt,
                 stream=False
             )
-            return response['response']
+            
+            # Extract performance metrics
+            total_duration = response.get('total_duration', 0)
+            load_duration = response.get('load_duration', 0)
+            prompt_eval_count = response.get('prompt_eval_count', 0)
+            prompt_eval_duration = response.get('prompt_eval_duration', 0)
+            eval_count = response.get('eval_count', 0)
+            eval_duration = response.get('eval_duration', 0)
+            
+            # Calculate tokens per second
+            tokens_per_second = 0
+            if eval_duration > 0:
+                tokens_per_second = eval_count / (eval_duration / 1_000_000_000)
+            
+            # Calculate total time in seconds
+            total_time_seconds = total_duration / 1_000_000_000 if total_duration > 0 else 0
+            
+            return {
+                'response': response['response'],
+                'metrics': {
+                    'total_duration_ns': total_duration,
+                    'total_duration_s': total_time_seconds,
+                    'load_duration_ns': load_duration,
+                    'load_duration_s': load_duration / 1_000_000_000 if load_duration > 0 else 0,
+                    'prompt_eval_count': prompt_eval_count,
+                    'prompt_eval_duration_ns': prompt_eval_duration,
+                    'prompt_eval_duration_s': prompt_eval_duration / 1_000_000_000 if prompt_eval_duration > 0 else 0,
+                    'eval_count': eval_count,
+                    'eval_duration_ns': eval_duration,
+                    'eval_duration_s': eval_duration / 1_000_000_000 if eval_duration > 0 else 0,
+                    'tokens_per_second': tokens_per_second,
+                    'model': response.get('model', self.model),
+                    'created_at': response.get('created_at', ''),
+                    'done': response.get('done', True)
+                }
+            }
         except ollama.ResponseError as e:
             raise RuntimeError(f"Ollama generation failed: {e}")
         except Exception as e:
