@@ -1,15 +1,12 @@
 # LLM Testing Interface
 
-A Python interface for testing and comparing different LLM models across multiple Ollama instances. This project provides a swappable interface architecture that allows you to easily test models from different sources and compare their responses.
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
+[![UV](https://img.shields.io/badge/UV-Package%20Manager-green.svg)](https://docs.astral.sh/uv/)
+[![Ollama](https://img.shields.io/badge/Ollama-Compatible-orange.svg)](https://ollama.ai)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Rich](https://img.shields.io/badge/Rich-Terminal%20UI-red.svg)](https://rich.readthedocs.io)
 
-## Features
-
-- 🚀 **Model Comparison Mode**: Test multiple models with the same prompt and compare responses
-- 🔄 **Multi-Instance Support**: Connect to multiple Ollama instances (remote and local)
-- 🌐 **Remote Connection**: Connect to Ollama running on remote machines via Tailscale
-- ⚙️ **Configurable**: YAML-based configuration for models and instances
-- 📦 **UV Managed**: Modern Python dependency management
-- 🎯 **Single Prompt Testing**: Enter once, test all configured models
+A Python interface for testing and comparing different LLM models across multiple Ollama instances. 
 
 ## Prerequisites
 
@@ -263,13 +260,7 @@ llm-testing/
 - `rich`: Beautiful terminal output
 - `requests`: HTTP client for connection testing
 
-### Key Features
 
-- **Multi-Instance Support**: Test models across different Ollama instances
-- **Model Comparison**: Side-by-side comparison of model responses
-- **Flexible Configuration**: Easy to add new models and instances
-- **Error Handling**: Graceful handling of connection and model errors
-- **Rich Output**: Beautiful terminal formatting with progress indicators
 
 ## License
 
