@@ -25,3 +25,4 @@ cli:
   welcome_message: "Welcome to LLM Testing Interface!"
   prompt: "Enter your prompt: "
   comparison_mode: true  # Run all models and compare responses
+  repetition_count: 5  # Number of times to run same model for consistency testing

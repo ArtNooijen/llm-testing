@@ -108,3 +108,8 @@ class Config:
         """Get URL for a specific Ollama instance."""
         config = self.get_ollama_instance_config(instance_name)
         return f"http://{config['host']}:{config['port']}"
+    
+    @property
+    def repetition_count(self) -> int:
+        """Get number of repetitions for consistency testing."""
+        return self.get('cli.repetition_count', 10)
