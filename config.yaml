@@ -10,6 +10,7 @@ ollama_instances:
     host: "localhost"  # local mac run ollama
     port: 11434
     timeout: 30
+  remote2:
 
 # Models to test (specify which instance each model runs on)
 models:
@@ -17,7 +18,7 @@ models:
     instance: "remote"
   - name: "llama3.1:8b"
     instance: "local"
-  - name: "codellama:7b"
+  - name: "qwen3:8b"
     instance: "remote"
 
 # CLI Configuration
